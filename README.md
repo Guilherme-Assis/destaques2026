@@ -87,8 +87,8 @@ npm run dev
 | `SUPABASE_SERVICE_ROLE_KEY` | sim | Service role, **server-only** |
 | `CPF_PEPPER` | sim | Pepper do HMAC-SHA256 do CPF. Troque em prod. |
 | `ADMIN_USER` | sim | Usuário do painel |
-| `ADMIN_PASSWORD_HASH` | prod | scrypt hash gerado por `scripts/hash-password.js` |
-| `ADMIN_PASSWORD` | dev | Senha em texto (ignorado em prod) |
+| `ADMIN_PASSWORD_HASH` | não | Hash scrypt opcional; tem prioridade sobre `ADMIN_PASSWORD` |
+| `ADMIN_PASSWORD` | sim* | Senha em texto, usada quando o hash não está definido |
 | `SESSION_SECRET` | sim | Assina o cookie de sessão admin |
 | `GLOBAL_VOTING_STARTS` | não | ISO 8601, override global da abertura |
 | `GLOBAL_VOTING_ENDS` | não | ISO 8601, override global do encerramento |

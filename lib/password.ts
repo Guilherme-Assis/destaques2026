@@ -4,9 +4,9 @@ import crypto from "node:crypto";
  * Hash de senha com scrypt (built-in do Node, sem dependências nativas).
  * Formato armazenado: `scrypt$<saltHex>$<hashHex>`.
  *
- * Para gerar o hash do ADMIN_PASSWORD em produção:
+ * Opcionalmente, para não armazenar a senha pura:
  *   node scripts/hash-password.js 'minha-senha-forte'
- * Cole o resultado em ADMIN_PASSWORD_HASH no .env (e remova ADMIN_PASSWORD).
+ * Cole o resultado em ADMIN_PASSWORD_HASH no .env (ele tem prioridade).
  */
 const PREFIX = "scrypt$";
 const KEY_LEN = 64;
@@ -52,18 +52,9 @@ export function verifyPassword(plain: string, stored: string): boolean {
   );
 }
 
-/** Retorna o hash configurado pelo operador, hashando ADMIN_PASSWORD se necessário. */
+/** Retorna a credencial configurada; ADMIN_PASSWORD_HASH tem prioridade. */
 export function configuredAdminHash(): string {
   const explicit = process.env.ADMIN_PASSWORD_HASH;
   if (explicit) return explicit;
-  const plain = process.env.ADMIN_PASSWORD;
-  if (!plain) return "";
-  // Em produção, exija ADMIN_PASSWORD_HASH; ADMIN_PASSWORD vira erro:
-  if (process.env.NODE_ENV === "production") {
-    console.error(
-      "[auth] ADMIN_PASSWORD_HASH ausente em produção — configure scrypt$… via `node scripts/hash-password.js`",
-    );
-    return "";
-  }
-  return hashPassword(plain);
+  return process.env.ADMIN_PASSWORD || "";
 }
