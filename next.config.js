@@ -4,7 +4,6 @@ const isProduction = process.env.NODE_ENV === "production";
 
 // CSP é estrito mas inclui as origens de fato usadas:
 //   - Supabase (api + storage + websockets)
-//   - Cloudflare Turnstile
 //   - Google Fonts (next/font baixa em build, mas o CSS pode bater no gstatic)
 //
 // 'unsafe-inline' em script-src é o trade-off pra Next.js sem nonce dinâmico
@@ -12,12 +11,11 @@ const isProduction = process.env.NODE_ENV === "production";
 // passo de hardening seria nonce via middleware.
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
-  "frame-src https://challenges.cloudflare.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
   "form-action 'self'",
   "base-uri 'self'",
   "frame-ancestors 'none'",

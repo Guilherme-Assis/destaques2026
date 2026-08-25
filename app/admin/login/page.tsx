@@ -1,38 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import TurnstileWidget from "@/app/_components/TurnstileWidget";
-import { turnstileSiteKey, useTurnstile } from "@/lib/turnstile-client";
-
-const TURNSTILE_SITE_KEY = turnstileSiteKey;
-const USE_TURNSTILE = useTurnstile;
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
-  const [tsToken, setTsToken] = useState("");
-  const [captcha, setCaptcha] = useState<{ token: string; question: string } | null>(null);
-  const [answer, setAnswer] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (USE_TURNSTILE) return;
-    fetch("/api/captcha", { cache: "no-store" })
-      .then((r) => r.json())
-      .then(setCaptcha)
-      .catch(() => {});
-  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
-    if (USE_TURNSTILE && !tsToken) {
-      setErr("Conclua a verificação anti-robô.");
-      return;
-    }
     setLoading(true);
     const res = await fetch("/api/admin/login", {
       method: "POST",
@@ -40,8 +20,6 @@ export default function AdminLoginPage() {
       body: JSON.stringify({
         user,
         password,
-        captchaToken: USE_TURNSTILE ? tsToken : captcha?.token,
-        captchaAnswer: USE_TURNSTILE ? "" : answer,
       }),
     });
     setLoading(false);
@@ -96,34 +74,6 @@ export default function AdminLoginPage() {
           />
         </label>
 
-        {USE_TURNSTILE ? (
-          <div>
-            <span className="text-[11px] uppercase tracking-[0.25em] text-gold-50/60">
-              Verificação anti-robô
-            </span>
-            <div className="mt-2">
-              <TurnstileWidget
-                siteKey={TURNSTILE_SITE_KEY}
-                onVerify={setTsToken}
-                onExpire={() => setTsToken("")}
-              />
-            </div>
-          </div>
-        ) : (
-          <label className="block">
-            <span className="text-[11px] uppercase tracking-[0.25em] text-gold-50/60">
-              Captcha · {captcha?.question ?? "carregando..."}
-            </span>
-            <input
-              inputMode="numeric"
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              className="input-luxe mt-2 font-display text-lg"
-              required
-            />
-          </label>
-        )}
-
         {err && (
           <div className="rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
             {err}
@@ -131,7 +81,7 @@ export default function AdminLoginPage() {
         )}
         <button
           type="submit"
-          disabled={loading || (USE_TURNSTILE ? !tsToken : !captcha)}
+          disabled={loading}
           className="btn-gold w-full"
         >
           {loading ? "Abrindo as portas..." : "Entrar no camarote"}

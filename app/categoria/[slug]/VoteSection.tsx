@@ -2,11 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { isValidCpf, sanitizeCpf } from "@/lib/cpf-validate";
-import TurnstileWidget from "@/app/_components/TurnstileWidget";
-import { turnstileSiteKey, useTurnstile } from "@/lib/turnstile-client";
-
-const TURNSTILE_SITE_KEY = turnstileSiteKey;
-const USE_TURNSTILE = useTurnstile;
 
 function normalize(s: string) {
   return s
@@ -57,9 +52,6 @@ export default function VoteSection({
   const votingOpen = votingStatus === "open";
   const [selected, setSelected] = useState<Nominee | null>(null);
   const [cpf, setCpf] = useState("");
-  const [captcha, setCaptcha] = useState<{ token: string; question: string } | null>(null);
-  const [answer, setAnswer] = useState("");
-  const [tsToken, setTsToken] = useState<string>("");
   const [consent, setConsent] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<
@@ -82,20 +74,11 @@ export default function VoteSection({
   const cpfValid = cpfFilled && isValidCpf(cpfClean);
   const cpfErr = cpfFilled && !cpfValid;
 
-  async function loadCaptcha() {
-    setAnswer("");
-    if (USE_TURNSTILE) return; // Turnstile renderiza/verifica sozinho
-    const res = await fetch("/api/captcha", { cache: "no-store" });
-    setCaptcha(await res.json());
-  }
-
   function openVote(n: Nominee) {
     setSelected(n);
     setCpf("");
-    setAnswer("");
     setConsent(false);
     setFeedback(null);
-    loadCaptcha();
   }
 
   function close() {
@@ -106,14 +89,6 @@ export default function VoteSection({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!selected) return;
-    if (USE_TURNSTILE) {
-      if (!tsToken) {
-        setFeedback({ kind: "err", msg: "Conclua a verificação anti-robô." });
-        return;
-      }
-    } else if (!captcha) {
-      return;
-    }
     if (!cpfValid) {
       setFeedback({ kind: "err", msg: "CPF inválido. Verifique o número." });
       return;
@@ -135,8 +110,6 @@ export default function VoteSection({
           categoryId,
           nomineeId: selected.id,
           cpf: cpfClean,
-          captchaToken: USE_TURNSTILE ? tsToken : captcha?.token,
-          captchaAnswer: USE_TURNSTILE ? "" : answer,
           consent: true,
         }),
       });
@@ -154,9 +127,6 @@ export default function VoteSection({
           kind: "err",
           msg: "Esse CPF já votou nesta categoria. Cada CPF só pode votar uma vez por categoria.",
         });
-      } else if (res.status === 400 && data?.error === "captcha") {
-        setFeedback({ kind: "err", msg: "Captcha incorreto. Geramos um novo, tente outra vez." });
-        loadCaptcha();
       } else if (res.status === 400 && data?.error === "cpf") {
         setFeedback({ kind: "err", msg: "CPF inválido." });
       } else {
@@ -392,34 +362,6 @@ export default function VoteSection({
                 )}
               </label>
 
-              {USE_TURNSTILE ? (
-                <div>
-                  <span className="text-[11px] uppercase tracking-[0.25em] text-gold-50/60">
-                    Verificação anti-robô
-                  </span>
-                  <div className="mt-2">
-                    <TurnstileWidget
-                      siteKey={TURNSTILE_SITE_KEY}
-                      onVerify={setTsToken}
-                      onExpire={() => setTsToken("")}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <label className="block">
-                  <span className="text-[11px] uppercase tracking-[0.25em] text-gold-50/60">
-                    Captcha · {captcha?.question ?? "carregando..."}
-                  </span>
-                  <input
-                    inputMode="numeric"
-                    value={answer}
-                    onChange={(e) => setAnswer(e.target.value)}
-                    className="input-luxe mt-2 font-display text-lg"
-                    required
-                  />
-                </label>
-              )}
-
               {feedback && (
                 <div
                   className={`rounded-xl border px-4 py-3 text-sm ${
@@ -487,7 +429,7 @@ export default function VoteSection({
                     loading ||
                     !cpfValid ||
                     !consent ||
-                    (USE_TURNSTILE ? !tsToken : !captcha)
+                    false
                   }
                   className="btn-gold"
                 >

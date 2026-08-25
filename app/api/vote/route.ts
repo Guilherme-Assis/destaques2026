@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { hashCpf, isValidCpf } from "@/lib/cpf";
-import { verifyChallenge } from "@/lib/turnstile";
 import { rateLimit, clientIp } from "@/lib/rateLimit";
 import { recordAudit } from "@/lib/audit-log";
 import { resolveWindow, statusOf } from "@/lib/votingWindow";
@@ -39,7 +38,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "json", message: "JSON inválido" }, { status: 400 });
   }
 
-  const { cpf, captchaToken, captchaAnswer, consent } = body || {};
+  const { cpf, consent } = body || {};
   const categoryId = Number(body?.categoryId);
   const nomineeId = Number(body?.nomineeId);
 
@@ -51,18 +50,6 @@ export async function POST(req: NextRequest) {
   if (consent !== true) {
     return NextResponse.json(
       { error: "consent", message: "É necessário aceitar a política de privacidade." },
-      { status: 400 },
-    );
-  }
-
-  const challenge = await verifyChallenge({
-    token: String(captchaToken || ""),
-    answer: String(captchaAnswer || ""),
-    ip,
-  });
-  if (!challenge.ok) {
-    return NextResponse.json(
-      { error: "captcha", message: "Captcha inválido. Tente novamente." },
       { status: 400 },
     );
   }

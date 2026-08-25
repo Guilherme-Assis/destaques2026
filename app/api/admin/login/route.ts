@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ADMIN_COOKIE, ADMIN_TTL_MS, createSessionCookie } from "@/lib/auth";
 import { configuredAdminHash, verifyPassword } from "@/lib/password";
-import { verifyChallenge } from "@/lib/turnstile";
 import { rateLimit, clientIp } from "@/lib/rateLimit";
 import { recordAudit } from "@/lib/audit-log";
 
@@ -32,25 +31,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => ({}));
-  const { user, password, captchaToken, captchaAnswer } = body || {};
-
-  // Turnstile (com fallback matemático em dev)
-  const challenge = await verifyChallenge({
-    token: String(captchaToken || ""),
-    answer: String(captchaAnswer || ""),
-    ip,
-  });
-  if (!challenge.ok) {
-    await recordAudit({
-      action: "admin_login_failed",
-      req,
-      meta: { reason: "captcha" },
-    });
-    return NextResponse.json(
-      { error: "captcha", message: "Verificação anti-robô falhou." },
-      { status: 400 },
-    );
-  }
+  const { user, password } = body || {};
 
   const expectedUser = process.env.ADMIN_USER || "admin";
   const adminHash = configuredAdminHash();

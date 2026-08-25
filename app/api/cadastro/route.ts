@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { ALLOWED_MIME, extForMime, uploadAvatar } from "@/lib/storage";
 import { isValidHandle, normalizeHandle } from "@/lib/handle";
-import { verifyChallenge } from "@/lib/turnstile";
 import { rateLimit, clientIp } from "@/lib/rateLimit";
 import { recordAudit } from "@/lib/audit-log";
 
@@ -55,21 +54,6 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json(
       { error: "form", message: "Formulário inválido" },
-      { status: 400 },
-    );
-  }
-
-  // captcha (Turnstile com fallback matemático)
-  const captchaToken = String(form.get("captchaToken") || "");
-  const captchaAnswer = String(form.get("captchaAnswer") || "");
-  const challenge = await verifyChallenge({
-    token: captchaToken,
-    answer: captchaAnswer,
-    ip,
-  });
-  if (!challenge.ok) {
-    return NextResponse.json(
-      { error: "captcha", message: "Captcha inválido. Tente novamente." },
       { status: 400 },
     );
   }

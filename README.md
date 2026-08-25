@@ -11,7 +11,6 @@ App web de votação popular onde concorrentes em cada categoria são perfis do 
 - TailwindCSS + Playfair Display
 - HMAC-SHA256 (Node `crypto`) para hash de CPF com pepper server-side
 - scrypt para hash da senha de admin
-- Cloudflare Turnstile para anti-bot (com fallback matemático em dev)
 - `next/og` para OG image (1200×630) e Story Instagram (1080×1920)
 
 ## Setup
@@ -24,13 +23,7 @@ App web de votação popular onde concorrentes em cada categoria são perfis do 
    - Project URL → `SUPABASE_URL`
    - service_role secret → `SUPABASE_SERVICE_ROLE_KEY`
 
-### 2. Cloudflare Turnstile (obrigatório em produção)
-
-1. https://dash.cloudflare.com → Turnstile → criar widget
-2. Copie sitekey → `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, secret → `TURNSTILE_SECRET_KEY`
-3. Em dev, deixe vazio para usar captcha matemático embutido.
-
-### 3. Configure o ambiente
+### 2. Configure o ambiente
 
 ```bash
 cp .env.example .env.local
@@ -39,7 +32,7 @@ npm install
 npm run check:env       # confere DATABASE_URL, Supabase, etc.
 ```
 
-### 4. Migrations + seed
+### 3. Migrations + seed
 
 ```bash
 supabase login
@@ -49,14 +42,14 @@ npm run seed                          # 400+ categorias + placeholders
 npm run seed:votes -- 100 --reset     # opcional: dev/staging
 ```
 
-### 5. Senha do admin (produção)
+### 4. Senha do admin (produção)
 
 ```bash
 node scripts/hash-password.js 'sua-senha-forte'
 # Cole o ADMIN_PASSWORD_HASH= no Vercel; remova ADMIN_PASSWORD do prod.
 ```
 
-### 6. Rodar local
+### 5. Rodar local
 
 ```bash
 npm run dev
@@ -79,10 +72,9 @@ npm run dev
    - `ADMIN_PASSWORD` → `ADMIN_PASSWORD_HASH=scrypt$...`
    - `CPF_PEPPER` → string aleatória de ≥32 chars (`openssl rand -hex 32`)
    - `SESSION_SECRET` → outra string aleatória de ≥32 chars
-   - `TURNSTILE_SECRET_KEY` e `NEXT_PUBLIC_TURNSTILE_SITE_KEY` reais
    - `NEXT_PUBLIC_SITE_URL` = URL da Vercel
    - `NEXT_PUBLIC_REALTIME=false` (Vercel Hobby tem timeout 10s; o admin cai em polling)
-3. Deploy. Em produção o app refusa qualquer captcha se Turnstile não estiver configurado.
+3. Deploy.
 
 > **Quer Realtime no admin?** Vercel Hobby não serve. Migre o app para Fly.io, Railway, Render ou um VPS, e ligue `NEXT_PUBLIC_REALTIME=true`.
 
@@ -97,9 +89,7 @@ npm run dev
 | `ADMIN_USER` | sim | Usuário do painel |
 | `ADMIN_PASSWORD_HASH` | prod | scrypt hash gerado por `scripts/hash-password.js` |
 | `ADMIN_PASSWORD` | dev | Senha em texto (ignorado em prod) |
-| `SESSION_SECRET` | sim | Assina cookie de sessão admin + captcha matemático |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | prod | Cloudflare Turnstile sitekey |
-| `TURNSTILE_SECRET_KEY` | prod | Cloudflare Turnstile secret |
+| `SESSION_SECRET` | sim | Assina o cookie de sessão admin |
 | `GLOBAL_VOTING_STARTS` | não | ISO 8601, override global da abertura |
 | `GLOBAL_VOTING_ENDS` | não | ISO 8601, override global do encerramento |
 | `NEXT_PUBLIC_REALTIME` | não | `true` para SSE no admin (não funciona em Vercel Hobby) |
@@ -108,10 +98,9 @@ npm run dev
 ## Hardening de produção embutido
 
 - **Rate limit em Postgres** (sliding window): IP por minuto/hora em `/api/vote` e `/api/cadastro`, **+ por hash de CPF** no voto, **+ por handle** no cadastro.
-- **Cloudflare Turnstile** obrigatório em prod; recusa todo desafio se ausente.
 - **Janela de votação** por categoria (`voting_starts_at` / `voting_ends_at`) com override global via env. UI mostra "Encerrada / Em breve" e a API retorna 409 fora da janela.
 - **Aprovação de inscrição** — cadastro público entra com `approved=false`. Indicado só aparece em home/categoria/pódio/OG/Story após admin aprovar em `/admin/aprovacoes`.
-- **Admin auth** com scrypt + Turnstile no login + lockout (5 tentativas / 15 min, 30 / hora) por IP, audit log de tentativas.
+- **Admin auth** com scrypt + lockout (5 tentativas / 15 min, 30 / hora) por IP e audit log de tentativas.
 - **LGPD**: checkbox de consentimento obrigatório em voto e cadastro, página `/privacidade`, audit log sem PII (IP + UA + meta JSON, sem CPF cru).
 - **Merkle root público** (`/transparencia`) das tabelas de votos para auditoria cidadã.
 - **CSP + headers de segurança** em `next.config.js` (HSTS, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy).
@@ -120,12 +109,12 @@ npm run dev
 ## Critérios de aceitação
 
 1. Home (`/`) lista categorias com contagem de indicados aprovados e votos.
-2. Categoria (`/categoria/[slug]`) lista concorrentes filtráveis; clique em **Votar** abre form com CPF + Turnstile + LGPD.
+2. Categoria (`/categoria/[slug]`) lista concorrentes filtráveis; clique em **Votar** abre form com CPF + LGPD.
 3. Reenvio com mesmo CPF na mesma categoria → erro `409` com mensagem clara.
 4. Mesmo CPF em outra categoria → permitido.
 5. CPF inválido bloqueado no client antes da API.
 6. Banco grava só `cpf_hash` (HMAC-SHA256). CPF cru nunca é persistido nem logado.
-7. `/admin` exige login com captcha + lockout, mostra apuração em tempo real (polling ou SSE).
+7. `/admin` exige login com lockout, mostra apuração em tempo real (polling ou SSE).
 8. Cadastro público entra em fila → só aparece após admin aprovar.
 9. Voto fora da janela é rejeitado com 409.
 10. `/transparencia` expõe Merkle root reproduzível por terceiros.
@@ -143,15 +132,14 @@ app/
   page.tsx                           home
   cadastro/                          inscrição pública
   categoria/[slug]/                  pódio + lista + voto
-  admin/login/                       login com Turnstile + lockout
+  admin/login/                       login com lockout
   admin/                             apuração live
   admin/aprovacoes/                  moderação de inscrições
   transparencia/                     auditoria pública (Merkle root)
   privacidade/                       LGPD
-  api/captcha                        captcha matemático (fallback)
   api/vote                           registra voto com janela + consent + rate limit
   api/cadastro                       upsert nominee + Storage + audit
-  api/admin/login                    sessão admin (scrypt + Turnstile + lockout)
+  api/admin/login                    sessão admin (scrypt + lockout)
   api/admin/results                  agregado pra dashboard
   api/admin/stream                   SSE de votos (gated por NEXT_PUBLIC_REALTIME)
   api/admin/nominees                 lista de inscritos por status
@@ -165,8 +153,6 @@ lib/
   db.ts                              postgres-js (pooler, bigint→Number)
   storage.ts                         Supabase Storage (avatares)
   cpf.ts / cpf-validate.ts           validação + hash HMAC
-  captcha.ts                         captcha matemático assinado
-  turnstile.ts                       verificação Cloudflare + fallback
   password.ts                        scrypt
   auth.ts                            cookie de sessão admin
   rateLimit.ts                       sliding window em Postgres

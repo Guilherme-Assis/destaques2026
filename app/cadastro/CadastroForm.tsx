@@ -2,11 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { isValidHandle, normalizeHandle } from "@/lib/handle";
-import TurnstileWidget from "@/app/_components/TurnstileWidget";
-import { turnstileSiteKey, useTurnstile } from "@/lib/turnstile-client";
-
-const TURNSTILE_SITE_KEY = turnstileSiteKey;
-const USE_TURNSTILE = useTurnstile;
 
 type Category = { slug: string; name: string };
 
@@ -24,9 +19,6 @@ export default function CadastroForm({ categories }: { categories: Category[] })
   const [query, setQuery] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [captcha, setCaptcha] = useState<{ token: string; question: string } | null>(null);
-  const [answer, setAnswer] = useState("");
-  const [tsToken, setTsToken] = useState<string>("");
   const [consent, setConsent] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<
@@ -59,17 +51,6 @@ export default function CadastroForm({ categories }: { categories: Category[] })
         .sort((a, b) => a.name.localeCompare(b.name, "pt-BR")),
     [categories, selected],
   );
-
-  async function loadCaptcha() {
-    setAnswer("");
-    if (USE_TURNSTILE) return;
-    const res = await fetch("/api/captcha", { cache: "no-store" });
-    setCaptcha(await res.json());
-  }
-
-  useEffect(() => {
-    loadCaptcha();
-  }, []);
 
   useEffect(() => {
     if (!file) {
@@ -126,11 +107,6 @@ export default function CadastroForm({ categories }: { categories: Category[] })
       setFeedback({ kind: "err", msg: "Escolha pelo menos uma categoria." });
       return;
     }
-    if (!captcha && !USE_TURNSTILE) return;
-    if (USE_TURNSTILE && !tsToken) {
-      setFeedback({ kind: "err", msg: "Conclua a verificação anti-robô." });
-      return;
-    }
     if (!consent) {
       setFeedback({
         kind: "err",
@@ -146,8 +122,6 @@ export default function CadastroForm({ categories }: { categories: Category[] })
       fd.set("name", name.trim());
       fd.set("handle", cleanHandle);
       fd.set("categories", JSON.stringify(Array.from(selected)));
-      fd.set("captchaToken", USE_TURNSTILE ? tsToken : captcha?.token || "");
-      fd.set("captchaAnswer", USE_TURNSTILE ? "" : answer);
       fd.set("consent", "true");
       if (file) fd.set("file", file);
 
@@ -156,7 +130,6 @@ export default function CadastroForm({ categories }: { categories: Category[] })
 
       if (!res.ok) {
         setFeedback({ kind: "err", msg: data?.message || "Falha no cadastro." });
-        if (data?.error === "captcha") loadCaptcha();
       } else {
         const parts = [];
         if (data.inserted) parts.push(`${data.inserted} inscrição(ões)`);
@@ -173,7 +146,6 @@ export default function CadastroForm({ categories }: { categories: Category[] })
         setFile(null);
         setConsent(false);
         if (fileRef.current) fileRef.current.value = "";
-        loadCaptcha();
       }
     } catch {
       setFeedback({ kind: "err", msg: "Erro de rede." });
@@ -277,33 +249,6 @@ export default function CadastroForm({ categories }: { categories: Category[] })
           )}
         </div>
 
-        {USE_TURNSTILE ? (
-          <div>
-            <span className="text-[11px] uppercase tracking-[0.25em] text-gold-50/60">
-              Verificação anti-robô
-            </span>
-            <div className="mt-2">
-              <TurnstileWidget
-                siteKey={TURNSTILE_SITE_KEY}
-                onVerify={setTsToken}
-                onExpire={() => setTsToken("")}
-              />
-            </div>
-          </div>
-        ) : (
-          <label className="block">
-            <span className="text-[11px] uppercase tracking-[0.25em] text-gold-50/60">
-              Captcha · {captcha?.question ?? "carregando..."}
-            </span>
-            <input
-              inputMode="numeric"
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              className="input-luxe mt-2 font-display text-lg"
-              required
-            />
-          </label>
-        )}
       </div>
 
       {/* Coluna direita: categorias */}
@@ -479,7 +424,7 @@ export default function CadastroForm({ categories }: { categories: Category[] })
               !handleValid ||
               selected.size === 0 ||
               !consent ||
-              (USE_TURNSTILE ? !tsToken : !captcha)
+              false
             }
             className="btn-gold"
           >
