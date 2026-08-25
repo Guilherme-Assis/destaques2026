@@ -40,9 +40,9 @@ export default async function HomePage() {
           · Gala 2026 ·
         </p>
         <h1 className="mx-auto max-w-3xl font-display text-5xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">
-          A noite em que o Brasil
+          A noite em que Itumbiara
           <br />
-          <span className="text-gold-shine">coroa seus melhores</span>
+          <span className="text-gold-shine">destaca seus melhores</span>
         </h1>
         <p className="mx-auto mt-6 max-w-xl text-base text-gold-50/70">
           Centenas de categorias. Um único voto seu por categoria. Vista o smoking,

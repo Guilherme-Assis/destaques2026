@@ -17,7 +17,7 @@ const sans = Inter({
 
 export const metadata: Metadata = {
   title: "Destaques do Ano · Diony 2026",
-  description: "A noite que coroa os melhores perfis do Brasil.",
+  description: "A noite que destaca os melhores perfis de Itumbiara.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
