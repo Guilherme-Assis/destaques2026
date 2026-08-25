@@ -1,0 +1,24 @@
+npm warn cli npm v11.10.0 does not support Node.js v18.20.8. This version of npm supports the following node versions: `^20.17.0 || >=22.9.0`. You can find the latest version at https://nodejs.org/.
+
+> melhores-do-ano@0.1.0 dev
+> next dev -p 3000
+
+ ⨯ Failed to start server
+Error: listen EPERM: operation not permitted 0.0.0.0:3000
+    at Server.setupListenHandle [as _listen2] (node:net:1800:21)
+    at listenInCluster (node:net:1865:12)
+    at Server.listen (node:net:1953:7)
+    at /Users/icenternovo/Documents/Projects/MelhoresDoAno/node_modules/next/dist/server/lib/start-server.js:280:16
+    at new Promise (<anonymous>)
+    at startServer (/Users/icenternovo/Documents/Projects/MelhoresDoAno/node_modules/next/dist/server/lib/start-server.js:191:11)
+    at /Users/icenternovo/Documents/Projects/MelhoresDoAno/node_modules/next/dist/server/lib/start-server.js:310:52
+    at Span.traceAsyncFn (/Users/icenternovo/Documents/Projects/MelhoresDoAno/node_modules/next/dist/trace/trace.js:154:26)
+    at process.<anonymous> (/Users/icenternovo/Documents/Projects/MelhoresDoAno/node_modules/next/dist/server/lib/start-server.js:310:35)
+    at process.emit (node:events:517:28) {
+  code: 'EPERM',
+  errno: -1,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+[?25h

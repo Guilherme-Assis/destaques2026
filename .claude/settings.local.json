@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(curl -sL \"https://api.github.com/repos/remotion-dev/skills/contents/skills/remotion/SKILL.md\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('content',''\\) if isinstance\\(d,dict\\) else d\\)\")",
+      "Bash(curl -sL \"https://api.github.com/repos/remotion-dev/skills/contents/skills\")",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); [print\\(f\\\\\" {d['name']} - {d['type']}\\\\\"\\) for d in data]\")",
+      "Bash(curl -sL \"https://api.github.com/repos/remotion-dev/skills/contents/skills/remotion\")",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); [print\\(f\\\\\" {d['name']:40s} {d['type']:5s} {d.get\\('size',0\\)}\\\\\"\\) for d in data]\")",
+      "Bash(curl *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('content',''\\)\\)\")",
+      "Bash(python3 -c ' *)",
+      "Bash(rm -rf /Users/icenternovo/Documents/Projects/MelhoresDoAno/.claude/skills/remotion-tmp)",
+      "Bash(rm -f /Users/icenternovo/Documents/Projects/MelhoresDoAno/.claude/skills/remotion-best-practices)",
+      "Bash(ln -sf ../../.agents/skills/remotion-best-practices /Users/icenternovo/Documents/Projects/MelhoresDoAno/.claude/skills/remotion)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(npx create-video@latest --yes --blank --no-tailwind tutorial-como-votar)",
+      "Bash(npm install *)",
+      "Bash(npx remotion *)",
+      "Bash(ls .env*)",
+      "Bash(cat .env.local)",
+      "Bash(cat .env)",
+      "Bash(npm ls *)",
+      "Bash(node *)"
+    ]
+  }
+}
